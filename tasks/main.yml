@@ -1,0 +1,18 @@
+---
+# tasks file for nginx
+- name: Install EPEL
+  yum:
+    name: epel-release
+    state: present
+  when: ansible_distribution == 'CentOS'
+  tags:
+    - install-epel
+
+- name: Install Nginx
+  package:
+    name: nginx
+    state: present
+  tags:
+    - install-nginx
+
+
