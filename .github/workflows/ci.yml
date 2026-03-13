@@ -15,7 +15,7 @@ defaults:
 jobs:
   molecule:
     name: Molecule
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check out the codebase.
         uses: actions/checkout@v4
@@ -26,7 +26,7 @@ jobs:
         uses: docker-practice/actions-setup-docker@master
         with:
           docker_channel: stable
-          docker_version: "20.10"
+        
 
       - name: Set up Python 3.
         uses: actions/setup-python@v5
@@ -35,14 +35,10 @@ jobs:
 
       - name: Install test dependencies.
         run: |
-            pip install molecule molecule-plugins[docker]
-            pip install ansible-core==2.16.8
+            pip install ansible molecule molecule-plugins[docker]
             python -m site &> /dev/null && PATH="$PATH:`python -m site --user-base`/bin"
-            molecule --version
-            ansible --version
+            
   
       - name: Run Molecule tests.
-        run: |
-          molecule destroy --all
-          molecule test
+        run: molecule test
       
