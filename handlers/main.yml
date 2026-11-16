@@ -1,10 +1,10 @@
 ---
-# handlers file for nginx
+- name: Restart PHP-FPM
+  ansible.builtin.service:
+    name: "{{ php_fpm_service }}"
+    state: restarted
+
 - name: Restart nginx
-  service:
+  ansible.builtin.service:
     name: nginx
     state: restarted
-- name: Check HTTP Service
-  uri:
-    url: http://{{ ansible_default_ipv4.address }}
-    status_code: 200 

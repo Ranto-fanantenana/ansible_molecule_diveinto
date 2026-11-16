@@ -1,18 +1,86 @@
 ---
-# tasks file for nginx
 - name: Install EPEL
-  yum:
+  ansible.builtin.package:
     name: epel-release
     state: present
-  when: ansible_distribution == 'CentOS'
+  when: ansible_os_family == 'RedHat'
   tags:
     - install-epel
 
 - name: Install Nginx
-  package:
+  ansible.builtin.package:
     name: nginx
     state: present
   tags:
     - install-nginx
+
+- name: Install PHP-FPM and CLI
+  ansible.builtin.package:
+    name: "{{ php_packages }}"
+    state: present
+  tags:
+    - install-php
+
+- name: Find PHP-FPM pool configuration
+  ansible.builtin.find:
+    paths: "{{ ['/etc/php'] if ansible_os_family == 'Debian' else ['/etc/php-fpm.d'] }}"
+    patterns: www.conf
+    recurse: true
+    file_type: file
+  register: php_fpm_pool_files
+
+- name: Ensure a PHP-FPM pool configuration was found
+  ansible.builtin.assert:
+    that:
+      - php_fpm_pool_files.matched > 0
+    fail_msg: "Unable to find the PHP-FPM www.conf pool configuration."
+
+- name: Configure PHP-FPM to listen on localhost
+  ansible.builtin.lineinfile:
+    path: "{{ php_fpm_pool_files.files[0].path }}"
+    regexp: '^listen\s*='
+    line: "listen = {{ php_fpm_listen }}"
+  notify: Restart PHP-FPM
+
+- name: Gather service facts
+  ansible.builtin.service_facts:
+
+- name: Find the PHP-FPM service
+  ansible.builtin.set_fact:
+    php_fpm_service: >-
+      {{ ansible_facts.services.keys()
+         | select('match', '^php([0-9.]+)?-fpm(\.service)?$')
+         | list | first | default('') }}
+
+- name: Ensure a PHP-FPM service was found
+  ansible.builtin.assert:
+    that:
+      - php_fpm_service | length > 0
+    fail_msg: "Unable to find the PHP-FPM service."
+
+- name: Ensure PHP-FPM is enabled and running
+  ansible.builtin.service:
+    name: "{{ php_fpm_service }}"
+    state: started
+    enabled: true
+
+- name: Configure Nginx to process PHP requests
+  ansible.builtin.template:
+    src: default.conf.j2
+    dest: "{{ nginx_site_config_path }}"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart nginx
+
+- name: Validate Nginx configuration
+  ansible.builtin.command: nginx -t
+  changed_when: false
+
+- name: Ensure Nginx is enabled and running
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
 
 

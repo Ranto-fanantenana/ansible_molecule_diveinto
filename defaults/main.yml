@@ -1,2 +1,8 @@
 ---
-# defaults file for nginx
+php_fpm_listen: 127.0.0.1:9000
+php_packages:
+  - php-cli
+  - php-fpm
+nginx_site_config_path: >-
+  {{ '/etc/nginx/conf.d/default.conf' if ansible_os_family == 'RedHat'
+     else '/etc/nginx/sites-available/default' }}

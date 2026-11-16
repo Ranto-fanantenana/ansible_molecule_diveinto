@@ -2,6 +2,14 @@
 - name: Converge
   hosts: all
   tasks:
-    - name: "Include nginx"
-      include_role:
-        name: "nginx"
+    - name: Include the role under test
+      ansible.builtin.include_role:
+        name: "{{ playbook_dir }}/../.."
+
+    - name: Install PHP integration test page
+      ansible.builtin.copy:
+        dest: /var/www/html/index.php
+        content: "<?php echo 'php-fpm-ok'; ?>"
+        owner: root
+        group: root
+        mode: "0644"

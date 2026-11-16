@@ -1,11 +1,17 @@
 ---
-# This is an example playbook to execute Ansible tests.
-
 - name: Verify
   hosts: all
   gather_facts: false
   tasks:
-    - name: test url
-      uri:
-        url: http://localhost
+    - name: Request the PHP test page through Nginx
+      ansible.builtin.uri:
+        url: http://localhost/index.php
+        return_content: true
+      register: php_response
+
+    - name: Assert PHP was executed by PHP-FPM
+      ansible.builtin.assert:
+        that:
+          - php_response.status == 200
+          - "'php-fpm-ok' in php_response.content"
 
